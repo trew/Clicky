@@ -1,0 +1,36 @@
+
+pages.png
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+entities/sun
+  rotate: false
+  xy: 1, 1
+  size: 786, 785
+  orig: 786, 785
+  offset: 0, 0
+  index: -1
+
+pages2.png
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+gamescreen/bg_generic
+  rotate: false
+  xy: 1, 1
+  size: 1920, 1080
+  orig: 1920, 1080
+  offset: 0, 0
+  index: -1
+
+pages3.png
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+menu-art/title
+  rotate: false
+  xy: 0, 0
+  size: 606, 142
+  orig: 606, 142
+  offset: 0, 0
+  index: -1

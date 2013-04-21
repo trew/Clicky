@@ -1,0 +1,82 @@
+{
+com.badlogic.gdx.graphics.g2d.BitmapFont: {
+	default-font: {
+		file: default.fnt
+	},
+	ethnocentric: {
+		file: ethnocentric.fnt
+	},
+	ethno_yellow_borders: {
+		file: ethno_yellow_borders.fnt
+	}
+},
+com.badlogic.gdx.graphics.Color: {
+	green: { a: 1, b: 0, g: 1, r: 0 },
+	white: { a: 1, b: 1, g: 1, r: 1 },
+	red: { a: 1, b: 0, g: 0, r: 1 },
+	black: { a: 1, b: 0, g: 0, r: 0 },
+	orange: { a: 1, b: 0, g: 0.8, r: 1 }
+},
+com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle: {
+	default: {
+		down: button-down,
+		up: button-up,
+		font: ethnocentric,
+		fontColor: black
+	},
+	toggle: {
+		down: button-down,
+		up: button-up,
+		checked: button-down,
+		font: ethnocentric,
+		fontColor: black,
+		downFontColor: red
+	}
+},
+com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle: {
+    default: { 
+        selection: default-slider,
+        background: default-box,
+        font: default-font,
+        fontColor: white,
+        cursor: default-slider-knob }
+},
+com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle: {
+    default: {
+        vScroll: default-box,
+        background: default-slider,
+        vScrollKnob: default-box
+    }
+},
+com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle: {
+    default: {
+        fontColorUnselected: black,
+        selection: default-box,
+        fontColorSelected: black,
+        font: default-font
+    }
+},
+com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle: {
+	default-horizontal: {
+		background: default-slider,
+		knob: default-slider-knob
+	}
+},
+com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle: {
+	default: {
+		font: default-font,
+		fontColor: orange
+	},
+	burning: {
+		font: ethno_yellow_borders,
+	}
+},
+com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle: {
+	default: {
+		checkboxOn: check-on,
+		checkboxOff: check-off,
+		font: default-font,
+		fontColor: orange
+	}
+}
+}
