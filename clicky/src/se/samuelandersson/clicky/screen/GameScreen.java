@@ -11,7 +11,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
-
 import se.samuelandersson.clicky.Clicky;
 import se.samuelandersson.clicky.game.ClickyGame;
 import se.samuelandersson.clicky.game.GameListener;
@@ -65,9 +64,9 @@ public class GameScreen extends AbstractScreen implements GameListener
 
     public void reset()
     {
-        game.dispose();
-        game.initialize();
-        startGameLabel.setVisible(true);
+        game.reset();
+        stage.clear();
+        initialize();
     }
 
     @Override
@@ -107,7 +106,7 @@ public class GameScreen extends AbstractScreen implements GameListener
         float acc = game.getClicks() > 0 ? game.getHits()
                 / (float) game.getClicks() : 0;
         accuracyLabel.setText("Acc: " + (int) (acc * 100) + "%");
-        scoreLabel.setText("Score: " + game.getFinalScore());
+        scoreLabel.setText("Score: " + game.getScore());
     }
 
     @Override
@@ -173,9 +172,10 @@ public class GameScreen extends AbstractScreen implements GameListener
                     field.removeListener(this);
                     field.remove();
                     l.remove();
+                    reset();
                     running = false;
-                    app.setScreen(app.getHighscoreScreen());
                     enteringHighscore = false;
+                    app.setScreen(app.getHighscoreScreen());
                     return true;
                 }
                 return false;

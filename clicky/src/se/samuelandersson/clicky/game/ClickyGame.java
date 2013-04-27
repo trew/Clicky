@@ -207,8 +207,8 @@ public class ClickyGame extends InputListener implements Disposable,
         ballManager.removeAll();
         gameOver = true;
         started = false;
-        if (Highscores.qualifiesForHighscore(getFinalScore()) >= 0) {
-            fireNewHighscore(getFinalScore());
+        if (Highscores.qualifiesForHighscore(getScore()) >= 0) {
+            fireNewHighscore(getScore());
         }
         fireGameOver();
     }
@@ -301,14 +301,9 @@ public class ClickyGame extends InputListener implements Disposable,
         return missedClicks;
     }
 
-    public float getScore()
+    public int getScore()
     {
         return score;
-    }
-
-    public int getFinalScore()
-    {
-        return (int) (score * hits / (float) clicks);
     }
 
     public boolean isGameOver()
