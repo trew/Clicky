@@ -1,10 +1,5 @@
 package se.samuelandersson.clicky.screen;
 
-import aurelienribon.tweenengine.BaseTween;
-import aurelienribon.tweenengine.Tween;
-import aurelienribon.tweenengine.TweenAccessor;
-import aurelienribon.tweenengine.TweenCallback;
-
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -18,14 +13,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
 
 import se.samuelandersson.clicky.Clicky;
-import se.samuelandersson.clicky.game.Ball;
 import se.samuelandersson.clicky.game.ClickyGame;
 import se.samuelandersson.clicky.game.GameListener;
 import se.samuelandersson.clicky.game.Highscores;
 import se.samuelandersson.clicky.manager.MusicManager.Song;
 
-public class GameScreen extends AbstractScreen implements GameListener,
-        TweenAccessor<Label>
+public class GameScreen extends AbstractScreen implements GameListener
+
 {
     private ClickyGame game;
 
@@ -35,7 +29,6 @@ public class GameScreen extends AbstractScreen implements GameListener,
     private Table table;
     private Label accuracyLabel;
     private Label scoreLabel;
-    private Label levelLabel;
     private Label startGameLabel;
 
     public GameScreen(Clicky app)
@@ -74,17 +67,15 @@ public class GameScreen extends AbstractScreen implements GameListener,
     {
         game.dispose();
         game.initialize();
+        startGameLabel.setVisible(true);
     }
 
     @Override
     public void initialize()
     {
-        Tween.registerAccessor(Label.class, this);
-
         table = new Table(getSkin());
         accuracyLabel = new Label("", getSkin());
         scoreLabel = new Label("", getSkin());
-        levelLabel = new Label("", getSkin());
         startGameLabel = new Label("Press space to start", getSkin(), "burning");
 
         table.setFillParent(true);
@@ -92,7 +83,6 @@ public class GameScreen extends AbstractScreen implements GameListener,
         table.align(Align.top);
         table.add(accuracyLabel);
         table.add(scoreLabel);
-        table.add(levelLabel);
         stage.addActor(table);
         stage.addActor(startGameLabel);
         if (game != null)
@@ -118,7 +108,6 @@ public class GameScreen extends AbstractScreen implements GameListener,
                 / (float) game.getClicks() : 0;
         accuracyLabel.setText("Acc: " + (int) (acc * 100) + "%");
         scoreLabel.setText("Score: " + game.getFinalScore());
-        levelLabel.setText("Level: " + game.getLevel());
     }
 
     @Override
@@ -128,8 +117,6 @@ public class GameScreen extends AbstractScreen implements GameListener,
         table.clear();
         scoreLabel.setStyle(getSkin().get("burning", LabelStyle.class));
         table.add(scoreLabel);
-        table.row();
-        table.add(levelLabel);
         table.row();
         table.add(accuracyLabel);
         table.invalidate();
@@ -148,14 +135,8 @@ public class GameScreen extends AbstractScreen implements GameListener,
         scoreLabel.setStyle(getSkin().get("default", LabelStyle.class));
         table.add(accuracyLabel);
         table.add(scoreLabel);
-        table.add(levelLabel);
         table.invalidate();
         startGameLabel.setVisible(false);
-    }
-
-    @Override
-    public void levelChanged(int toLevel)
-    {
     }
 
     private void centerX(Actor l)
@@ -200,49 +181,6 @@ public class GameScreen extends AbstractScreen implements GameListener,
                 return false;
             }
         });
-    }
-
-    static public final int TWEEN_LABEL = 0;
-
-    @Override
-    public void scoreAdded(int added, Ball target)
-    {
-        final Label l = new Label("" + added, getSkin());
-        l.setPosition(target.getX() + target.getWidth() / 2 - l.getWidth() / 2,
-                target.getY() + target.getHeight());
-        stage.addActor(l);
-        TweenCallback cb = new TweenCallback()
-        {
-
-            @Override
-            public void onEvent(int type, BaseTween<?> source)
-            {
-                l.remove();
-            }
-        };
-
-        Tween.to(l, TWEEN_LABEL, 1).target(l.getY() + 30, 0).setCallback(cb)
-                .start(game.getTweenManager());
-    }
-
-    @Override
-    public int getValues(Label target, int tweenType, float[] returnValues)
-    {
-        if (tweenType == TWEEN_LABEL) {
-            returnValues[0] = target.getY();
-            returnValues[1] = target.getColor().a;
-            return 2;
-        }
-        return 0;
-    }
-
-    @Override
-    public void setValues(Label target, int tweenType, float[] newValues)
-    {
-        if (tweenType == TWEEN_LABEL) {
-            target.setY(newValues[0]);
-            target.getColor().a = newValues[1];
-        }
     }
 
     @Override

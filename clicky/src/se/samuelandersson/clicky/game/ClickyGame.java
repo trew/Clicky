@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -11,19 +12,26 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+
+import aurelienribon.tweenengine.BaseTween;
 import aurelienribon.tweenengine.Tween;
+import aurelienribon.tweenengine.TweenAccessor;
+import aurelienribon.tweenengine.TweenCallback;
 import aurelienribon.tweenengine.TweenManager;
 import se.samuelandersson.clicky.Clicky;
 import se.samuelandersson.clicky.manager.SoundManager.GameSound;
 import se.samuelandersson.clicky.util.MathHelper;
 
-public class ClickyGame extends InputListener implements Disposable
+public class ClickyGame extends InputListener implements Disposable,
+        TweenAccessor<Label>
 {
     private final Clicky app;
     private final Stage stage;
+    static public final int TWEEN_LABEL = 0;
 
     private TweenManager tweenManager;
 
@@ -38,9 +46,8 @@ public class ClickyGame extends InputListener implements Disposable
     private int hits = 0;
     int misses = 0;
     int missedClicks = 0;
-    private int level = 1;
+    private Rules rules;
 
-    private Array<Level> levels;
     private float timer;
 
     private Array<GameListener> gameListeners;
@@ -53,49 +60,37 @@ public class ClickyGame extends InputListener implements Disposable
         gameListeners = new Array<GameListener>();
         ballManager = new BallManager(this);
         tweenManager = new TweenManager();
+        rules = new Rules();
         Tween.registerAccessor(Ball.class, ballManager);
+        Tween.registerAccessor(Label.class, this);
     }
 
     public void initialize()
     {
         reset();
-        levels = new Array<Level>(10);
-        levels.add(new Level(1.0f, 1.0f, 10));
-        levels.add(new Level(0.9f, 1.2f, 11));
-        levels.add(new Level(0.8f, 1.4f, 12));
-        levels.add(new Level(0.7f, 1.6f, 13));
-        levels.add(new Level(0.6f, 1.8f, 14));
-        levels.add(new Level(0.6f, 1.9f, 15));
-        levels.add(new Level(0.5f, 2.1f, 16));
-        levels.add(new Level(0.49f, 2.2f, 17));
-        levels.add(new Level(0.48f, 2.3f, 18));
-        levels.add(new Level(0.45f, 2.5f, 20));
+
         getStage().addListener(this);
         listener = new ClickListener(Buttons.LEFT)
         {
             @Override
             public void clicked(InputEvent event, float x, float y)
             {
-                if (paused || gameOver)
+                if (!started || paused || gameOver)
                     return;
                 clicks++;
                 if (event.getTarget() instanceof Ball) {
                     Ball b = (Ball) event.getTarget();
                     ballManager.clicked(b);
                     hits++;
+                    rules.currentBallDelay -= rules.ballDelayDec;
                     app.getSoundManager().play(GameSound.SWOOP);
-                    levels.get(level).totalBalls--;
-                    if (levels.get(level).totalBalls == 0) {
-                        if (level < 9) {
-                            level++;
-                            fireLevelChanged();
-                        } else
-                            gameOver();
-                    }
                     addScore(b, new Vector2(x, y));
                 } else {
                     missedClicks++;
                     misses++;
+                    addClickedLabel(x, y, "Miss!", Color.RED);
+                    if (misses > 10) // FIXME magic number
+                        gameOver();
                 }
             }
 
@@ -119,9 +114,14 @@ public class ClickyGame extends InputListener implements Disposable
         hits = 0;
         misses = 0;
         missedClicks = 0;
-        level = 0;
+        rules.reset();
         started = false;
         gameOver = false;
+        for (BaseTween<?> t : tweenManager.getObjects()) {
+            if (t.getUserData() instanceof Actor) {
+                ((Actor) t.getUserData()).remove();
+            }
+        }
         tweenManager.killAll();
     }
 
@@ -147,9 +147,9 @@ public class ClickyGame extends InputListener implements Disposable
         }
 
         timer += delta;
-        while (timer > levels.get(level).ballDelay) {
-            ballManager.addRandomBall(levels.get(level));
-            timer -= levels.get(level).ballDelay;
+        while (timer > rules.currentBallDelay) {
+            ballManager.addRandomBall(rules.ballLifeTime);
+            timer -= rules.currentBallDelay;
         }
     }
 
@@ -172,11 +172,34 @@ public class ClickyGame extends InputListener implements Disposable
         float base = (100 - MathHelper.clamp(radius, 0.1f, 99.9f));
         int toAdd = (int) (base / timeAlive / distanceToMid);
         score += toAdd;
-        DecimalFormat f = new DecimalFormat("00.00");
-        System.out.println("score += base(" + f.format(base) + ") / timeAlive("
-                + f.format(timeAlive) + ") / distanceToMid("
-                + f.format(distanceToMid) + ") = " + toAdd);
-        fireScoreAdded(toAdd, target);
+
+        addClickedLabel(target.getX() + target.getWidth() / 2, target.getY()
+                + target.getHeight(), "" + toAdd, Color.GREEN);
+    }
+
+    void addClickedLabel(float x, float y, String text)
+    {
+        addClickedLabel(x, y, text, Color.WHITE);
+    }
+
+    void addClickedLabel(float x, float y, String text, Color color)
+    {
+        final Label l = new Label(text, getApp().getSkin());
+        l.setColor(color);
+        l.setPosition(x - l.getWidth() / 2, y);
+        getStage().addActor(l);
+        TweenCallback cb = new TweenCallback()
+        {
+            @Override
+            public void onEvent(int type, BaseTween<?> source)
+            {
+                if (type == COMPLETE)
+                    l.remove();
+            }
+        };
+
+        Tween.to(l, TWEEN_LABEL, 1).target(l.getY() + 30, 0).setCallback(cb)
+                .setUserData(l).start(getTweenManager());
     }
 
     public void gameOver()
@@ -288,11 +311,6 @@ public class ClickyGame extends InputListener implements Disposable
         return (int) (score * hits / (float) clicks);
     }
 
-    public int getLevel()
-    {
-        return level + 1;
-    }
-
     public boolean isGameOver()
     {
         return gameOver;
@@ -327,24 +345,31 @@ public class ClickyGame extends InputListener implements Disposable
         }
     }
 
-    protected void fireLevelChanged()
-    {
-        for (GameListener l : gameListeners) {
-            l.levelChanged(level);
-        }
-    }
-
-    protected void fireScoreAdded(int added, Ball target)
-    {
-        for (GameListener l : gameListeners) {
-            l.scoreAdded(added, target);
-        }
-    }
-
     protected void fireNewHighscore(int score)
     {
         for (GameListener l : gameListeners) {
             l.newHighscore(score);
         }
     }
+
+    @Override
+    public int getValues(Label target, int tweenType, float[] returnValues)
+    {
+        if (tweenType == TWEEN_LABEL) {
+            returnValues[0] = target.getY();
+            returnValues[1] = target.getColor().a;
+            return 2;
+        }
+        return 0;
+    }
+
+    @Override
+    public void setValues(Label target, int tweenType, float[] newValues)
+    {
+        if (tweenType == TWEEN_LABEL) {
+            target.setY(newValues[0]);
+            target.getColor().a = newValues[1];
+        }
+    }
+
 }

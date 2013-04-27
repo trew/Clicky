@@ -13,6 +13,7 @@ import aurelienribon.tweenengine.TweenCallback;
 import aurelienribon.tweenengine.TweenEquations;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
 
@@ -29,7 +30,7 @@ public class BallManager implements TweenAccessor<Ball>
 
     private TweenCallback removeBallCB;
 
-    private float maxSize = 40;
+    private float maxSize = 40; // FIXME magic number
 
     public BallManager(ClickyGame game)
     {
@@ -54,40 +55,41 @@ public class BallManager implements TweenAccessor<Ball>
         return balls;
     }
 
-    public void addRandomBall(Level level)
+    public void addRandomBall(float lifeTime)
     {
-        float margin = 20;
+        float margin = 20; // FIXME magic number
         float x = MathHelper.convert(rnd.nextFloat(), 0, 1, margin,
                 Gdx.graphics.getWidth() - margin);
         float y = MathHelper.convert(rnd.nextFloat(), 0, 1, margin,
                 Gdx.graphics.getHeight() - margin);
 
-        Ball b = createBall(x, y, level);
+        Ball b = createBall(x, y, lifeTime);
         balls.add(b);
         game.getStage().addActor(b);
     }
 
-    public Ball createBall(float x, float y, Level level)
+    public Ball createBall(float x, float y, float lifeTime)
     {
-        final Ball b = new Ball(x, y, level.speed, this);
+        final Ball b = new Ball(x, y, lifeTime, this);
 
         // Create two tweens, one increasing the size and one decreasing it
         // When both have passed, remove the ball and increase the miss-count.
-        Tween inc = Tween.to(b, TWEEN_SIZE, 1.5f).target(maxSize)
-                .ease(TweenEquations.easeInOutSine);
-        Tween dec = Tween.to(b, TWEEN_SIZE, 1.5f).target(0)
-                .ease(TweenEquations.easeInOutSine);
+        Tween inc = Tween.to(b, TWEEN_SIZE, lifeTime / 2).target(maxSize)
+                .setUserData(b).ease(TweenEquations.easeInOutSine);
+        Tween dec = Tween.to(b, TWEEN_SIZE, lifeTime / 2).target(0)
+                .setUserData(b).ease(TweenEquations.easeInOutSine);
         dec.setCallback(new TweenCallback()
         {
             @Override
             public void onEvent(int type, BaseTween<?> source)
             {
+                game.addClickedLabel(b.getX(), b.getY(), "Miss!", Color.RED);
                 removeBall(b);
                 game.misses++;
             }
         });
 
-        Timeline tl = Timeline.createSequence();
+        Timeline tl = Timeline.createSequence().setUserData(b);
         tl.push(inc).push(dec);
         tl.start(game.getTweenManager());
         return b;
