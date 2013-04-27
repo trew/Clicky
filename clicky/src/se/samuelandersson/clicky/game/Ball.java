@@ -10,12 +10,16 @@ public class Ball extends Image
     private boolean killed = false;
     private float timeAlive;
 
-    private float sizeSpeed;
+    private float originalX;
+    private float originalY;
 
-    protected Ball(BallManager manager, float speed)
+    protected Ball(float x, float y, float speed, BallManager manager)
     {
         super(manager.getBallRegion());
-        sizeSpeed = 30 * speed;
+        originalX = x;
+        originalY = y;
+        setPosition(x, y);
+        setSize(0, 0);
     }
 
     public void kill()
@@ -34,6 +38,16 @@ public class Ball extends Image
         return timeAlive;
     }
 
+    public float getOriginalX()
+    {
+        return originalX - getWidth() * getScaleX() / 2;
+    }
+
+    public float getOriginalY()
+    {
+        return originalY - getHeight() * getScaleY() / 2;
+    }
+
     @Override
     public void act(float delta)
     {
@@ -41,17 +55,6 @@ public class Ball extends Image
 
         if (!killed) {
             timeAlive += delta;
-
-            float sizeSpeed = this.sizeSpeed * delta;
-
-            size(sizeSpeed);
-            float x = getX() - sizeSpeed / 2f;
-            float y = getY() - sizeSpeed / 2f;
-            float w = getWidth();
-
-            setPosition(x, y);
-            setOrigin(w / 2, w / 2);
-            invalidate();
         }
     }
 

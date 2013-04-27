@@ -36,7 +36,8 @@ public class ClickyGame extends InputListener implements Disposable
     private int score = 0;
     private int clicks = 0;
     private int hits = 0;
-    private int misses = 0;
+    int misses = 0;
+    int missedClicks = 0;
     private int level = 1;
 
     private Array<Level> levels;
@@ -93,6 +94,7 @@ public class ClickyGame extends InputListener implements Disposable
                     }
                     addScore(b, new Vector2(x, y));
                 } else {
+                    missedClicks++;
                     misses++;
                 }
             }
@@ -116,6 +118,7 @@ public class ClickyGame extends InputListener implements Disposable
         clicks = 0;
         hits = 0;
         misses = 0;
+        missedClicks = 0;
         level = 0;
         started = false;
         gameOver = false;
@@ -214,6 +217,7 @@ public class ClickyGame extends InputListener implements Disposable
         builder.append("Clicks: " + clicks + "\n");
         builder.append("Hits: " + hits + "\n");
         builder.append("Misses: " + misses + "\n");
+        builder.append("Missed Clicks: " + missedClicks + "\n");
 
         // draw it
         batch.begin();
@@ -267,6 +271,11 @@ public class ClickyGame extends InputListener implements Disposable
     public int getMisses()
     {
         return misses;
+    }
+
+    public int getMissedClicks()
+    {
+        return missedClicks;
     }
 
     public float getScore()

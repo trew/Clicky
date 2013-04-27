@@ -6,6 +6,7 @@ import java.util.Random;
 import se.samuelandersson.clicky.util.MathHelper;
 
 import aurelienribon.tweenengine.BaseTween;
+import aurelienribon.tweenengine.Timeline;
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenAccessor;
 import aurelienribon.tweenengine.TweenCallback;
@@ -17,6 +18,9 @@ import com.badlogic.gdx.utils.Array;
 
 public class BallManager implements TweenAccessor<Ball>
 {
+    static public final int TWEEN_SCALE = 0;
+    static public final int TWEEN_SIZE = 1;
+
     private final ClickyGame game;
     private Array<Ball> balls;
 
@@ -24,6 +28,8 @@ public class BallManager implements TweenAccessor<Ball>
     private TextureRegion ballRegion;
 
     private TweenCallback removeBallCB;
+
+    private float maxSize = 40;
 
     public BallManager(ClickyGame game)
     {
@@ -63,9 +69,27 @@ public class BallManager implements TweenAccessor<Ball>
 
     public Ball createBall(float x, float y, Level level)
     {
-        Ball b = new Ball(this, level.speed);
-        b.setPosition(x, y);
-        b.setSize(0, 0);
+        final Ball b = new Ball(x, y, level.speed, this);
+
+        // Create two tweens, one increasing the size and one decreasing it
+        // When both have passed, remove the ball and increase the miss-count.
+        Tween inc = Tween.to(b, TWEEN_SIZE, 1.5f).target(maxSize)
+                .ease(TweenEquations.easeInOutSine);
+        Tween dec = Tween.to(b, TWEEN_SIZE, 1.5f).target(0)
+                .ease(TweenEquations.easeInOutSine);
+        dec.setCallback(new TweenCallback()
+        {
+            @Override
+            public void onEvent(int type, BaseTween<?> source)
+            {
+                removeBall(b);
+                game.misses++;
+            }
+        });
+
+        Timeline tl = Timeline.createSequence();
+        tl.push(inc).push(dec);
+        tl.start(game.getTweenManager());
         return b;
     }
 
@@ -78,6 +102,7 @@ public class BallManager implements TweenAccessor<Ball>
     public void clicked(Ball b)
     {
         b.kill();
+        game.getTweenManager().killTarget(b);
         Tween.to(b, TWEEN_SCALE, 0.2f).target(0).setUserData(b)
                 .setCallback(removeBallCB).ease(TweenEquations.easeInBack)
                 .start(game.getTweenManager());
@@ -87,13 +112,12 @@ public class BallManager implements TweenAccessor<Ball>
     {
         for (Ball b : balls) {
             b.kill();
+            game.getTweenManager().killTarget(b);
             Tween.to(b, TWEEN_SCALE, 2).target(10).setUserData(b)
                     .setCallback(removeBallCB).ease(TweenEquations.easeInBack)
                     .start(game.getTweenManager());
         }
     }
-
-    static public final int TWEEN_SCALE = 0;
 
     @Override
     public int getValues(Ball target, int tweenType, float[] returnValues)
@@ -102,6 +126,9 @@ public class BallManager implements TweenAccessor<Ball>
             returnValues[0] = target.getScaleX();
             returnValues[1] = target.getScaleY();
             return 2;
+        } else if (tweenType == TWEEN_SIZE) {
+            returnValues[0] = target.getWidth();
+            return 1;
         }
         return 0;
     }
@@ -111,6 +138,13 @@ public class BallManager implements TweenAccessor<Ball>
     {
         if (tweenType == TWEEN_SCALE) {
             target.setScale(newValues[0], newValues[1]);
+            target.setPosition(target.getOriginalX(), target.getOriginalY());
+        } else if (tweenType == TWEEN_SIZE) {
+            if (newValues[0] < 0)
+                return;
+            target.setSize(newValues[0], newValues[0]);
+            target.setPosition(target.getOriginalX(), target.getOriginalY());
+            target.invalidate(); // because of setSize()
         }
     }
 
